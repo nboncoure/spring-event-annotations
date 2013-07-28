@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:event="http://spring-event-annotations.github.com"
+	xmlns:context="http://www.springframework.org/schema/context"
+	xmlns:jpa="http://www.springframework.org/schema/data/jpa"
+	xmlns:p="http://www.springframework.org/schema/p"
+	xmlns:tx="http://www.springframework.org/schema/tx"
+	xsi:schemaLocation="http://spring-event-annotations.github.com http://spring-event-annotations.github.com/spring-event-1.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/data/jpa http://www.springframework.org/schema/data/jpa/spring-jpa.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.2.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+	<context:annotation-config />
+	<context:component-scan base-package="com.github.spring.event" />
+	
+	<jpa:repositories base-package="com.github.spring.event.samples.transactional" />
+	
+	<!--
+	<bean id="executor" class="org.springframework.core.task.SyncTaskExecutor" />
+	
+		Executor attribute is optional and it specifies the java.util.Executor 
+		instance to use when invoking asynchronous methods. If not provided, 
+		an instance of org.springframework.core.task.SimpleAsyncTaskExecutor 
+		will be used by default. 
+	<event:annotation-driven executor="executor"/>
+	-->
+	<event:annotation-driven />
+	
+	<bean id="dataSource" class="org.apache.commons.dbcp.BasicDataSource"
+		destroy-method="close"
+		p:driverClassName="org.h2.Driver"
+		p:url="jdbc:h2:mem:test;DB_CLOSE_DELAY=-1"
+		p:maxActive="50"
+		p:maxWait="1000"
+		p:poolPreparedStatements="true"
+		p:username="sa"
+		p:password=""/>
+
+	<bean id="entityManagerFactory"
+		class="org.springframework.orm.jpa.LocalContainerEntityManagerFactoryBean"
+		p:packagesToScan="com.github.spring.event.samples"
+		p:dataSource-ref="dataSource">
+		<property name="jpaDialect">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaDialect" />
+		</property>
+		<property name="jpaVendorAdapter">
+			<bean class="org.springframework.orm.jpa.vendor.HibernateJpaVendorAdapter"
+				p:showSql="false"
+				p:database="H2"/>
+		</property>
+		<property name="jpaPropertyMap">
+			<map>
+				<entry key="hibernate.dialect" value="org.hibernate.dialect.H2Dialect" />
+				<entry key="hibernate.format_sql" value="true" />
+				<entry key="hibernate.hbm2ddl.auto" value="update" />
+				<entry key="hibernate.cache.use_second_level_cache" value="false" />
+				<entry key="hibernate.cache.region.factory_class" value="net.sf.ehcache.hibernate.SingletonEhCacheProvider" />
+				<entry key="hibernate.id.new_generator_mappings" value="true" />
+				<entry key="hibernate.generate_statistics" value="true" />
+			</map>
+		</property>
+	</bean>
+
+	<bean id="transactionManager" class="org.springframework.orm.jpa.JpaTransactionManager"
+		p:entityManagerFactory-ref="entityManagerFactory" />
+
+	<!-- proxy-target-class is true to enable transaction starting in controller layer. -->
+	<tx:annotation-driven proxy-target-class="true"/>
+	
+</beans>
